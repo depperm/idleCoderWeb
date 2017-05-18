@@ -6,6 +6,8 @@
     width: 450px;
     padding-bottom: 0;
     overflow-y: auto !important;
+    overflow-x: initial;
+    white-space: wrap;
     display: table-cell;
     position: relative;
 }
@@ -14,8 +16,8 @@
     max-height: 70px;
     width: 450px;
     padding-bottom: 0;
-    overflow-y: hidden !important;
     position: relative;
+    overflow: hidden;
 }
 #divider{
     background: #848484;
@@ -31,6 +33,7 @@
 #cmd {
     width: 450px;
     padding-top: 0;
+    overflow: hidden;
 }
 #cmd,#cmd_hstry,#score {
     font-family: courier;
@@ -38,7 +41,6 @@
     background: black;
     color: #21f838;
 
-    overflow: hidden;
 }
 #cmd span,#cmd_hstry div,#score div {
     float: left;
@@ -65,12 +67,70 @@ var terminalHistory=[];
 var index=-1;
 
 var validCommands={
-    'ls':{'short':'list directory contents','long':'List information about the FILEs in the current directory. Sort entries alphabetically.',pattern:/^ls(\s+\-l)?$/ }
+    'ls':{'short':'list directory contents','long': 'List information about the FILEs in the current directory. Sort entries alphabetically.','pattern': /^ls(\s+\-l)?$/, 'option': [{'-l': 'use a long listing format'}], 'example': [{'ls -l': 'outputs details about each FILE in the directory.'}]},
+    'hire':{'short':'hire a specific programmer', 'long': 'Hire programmers to write some code, if you have enough to hire them', 'pattern': /^hire\s+(\-(frd|fdr|dfr|drf|rdf|rfd)|(\w+|\w+\s+\-m|\w+\s+\-a\s+\d+))$/, 'option': [{'-m': 'hire as many programmers of specified role'}, {'-dfr': 'hire as many programmers as possible starting with Guru, order of letters doesn\'t matter'}, {'-a #': 'hire # programmers of specified role, or as many as you can up to that #'}], 'example': [{"hire Student": "hires one Student"}, {"hire Student -m": "hires as many Students as you can"}, {"hire afr": "hires as many Hobbyists as possible, then as many Students, ... all the way to Guru"}]},
+    'cd':{'short':'change to the specified directory', 'long': 'Change the current working directory to the parameter.', 'pattern': /^cd\s+(\.\.|\w+\/?)$/, 'option': [], 'example': [{"cd team": "change the current working directory to team (from any directory)."}, {"cd ..": "move up a directory."}]},
+    'pwd':{'short':'print current directory', 'long': 'Print the current working directory.', 'pattern': /^pwd$/, 'option': [], 'example': []},
+    'help':{'short':'list all possible commands', 'long': 'List all possible commands and options. Sort entries alphabetically.', 'pattern': /^help$/, 'option': [], 'example': []},
+    'man':{'short':'format and display the on-line manual pages', 'long': 'man formats and displays the on-line manual pages.', 'pattern': /^man(\s+[a-z]+)?$/, 'option': [], 'example': [{'man hire': 'Displays the details about \'hire\' (or whatever command is specified)'}]}
 };
 
 function evaluateCommand(command){
-    if(command in validCommands){
+    if(command.split(' ')[0] in validCommands){
+        var cd=validCommands['cd']['pattern'].exec(command);
+        var man=validCommands['man']['pattern'].exec(command);
+        if(validCommands['help']['pattern'].exec(command)){
+            var output='IDLE bash, version 0.0.1-release (idle-os)\nThese shell commands are defined internally. Type\n\'help\' to see this list. Use \'man command\' to find\nout more about a specific command from this list.\n\n';
+            var comms = [];
+            for(var c in validCommands){
+                if (validCommands.hasOwnProperty(c)) {
+                    var t=c;
+                    var tempObj=validCommands[c]['option'];
+                    for(var i=0; i < tempObj.length;i++){
+                        t+=' ['+Object.keys(tempObj[i])[0]+']';
+                    }
+                    comms.push(t);
+                }
+            }
+            comms.sort();
+            if(comms.length%2 == 0){
+                for(var i=0;i<comms.length/2;i++){
+                    output+=comms[i].padEnd(25)+comms[(comms.length/2)+i]+'\n';
+                }
+            }
+            else{
+                for(var i=0;i<comms.length/2;i++){
+                    output+=comms[i].padEnd(25)+comms[(comms.length/2)+1+i]+'\n';
+                }
+                output+=comms[comms.length/2]+'\n';
+            }
+            $('#cmd_hstry>div').append('\n'+output);
+        }else if(validCommands['pwd']['pattern'].exec(command)){
+            
+        }else if(cd){
+            
+        }else if(man){
+            console.log(man);
+            var output;
+            if(man[1] == undefined){
+                output='What manual page do you want?';
+            }else{
+                var t=man[1].trim();
+                if(t in validCommands) {
+                    //console.log('print manual page for'+man[1]);
+                    output=(t.toUpperCase()+'(1)').padEnd(20)+'User Commands'+(t.toUpperCase()+'(1)').padStart(20)+'\n\nNAME\n';
+                    output+='\t'+t+' - '+validCommands[t]['short']+'\n\nSYNOPSIS\n\t'+t+'\n\nDESCRIPTION\n\t';
+                    output+=validCommands[t]['long'];
 
+                    var tempObj=validCommands[t]['option'];
+                    for(var i=0; i < tempObj.length;i++){
+                        var key=Object.keys(tempObj[i])[0];
+                        output+='\n\n\t'+key+',\t'+tempObj[i][key];
+                    }
+                }
+            }
+            $('#cmd_hstry>div').append('\n'+output);
+        }
     }
     else{
         $('#cmd_hstry>div').append('\nbash: '+command+': command not found');
