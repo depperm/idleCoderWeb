@@ -1,0 +1,167 @@
+<html>
+<style type="text/css">
+#cmd_hstry {
+    height: 300px;
+    max-height: 300px;
+    width: 450px;
+    padding-bottom: 0;
+    overflow-y: auto !important;
+    display: table-cell;
+    position: relative;
+}
+#score {
+    height: 70px;
+    max-height: 70px;
+    width: 450px;
+    padding-bottom: 0;
+    overflow-y: hidden !important;
+    position: relative;
+}
+#divider{
+    background: #848484;
+    width: 450px;
+    height: 3px;
+}
+#cmd_hstry div,#score div{
+    position:absolute;
+    overflow-y: auto;
+    left:0;
+    width:100%;
+}
+#cmd {
+    width: 450px;
+    padding-top: 0;
+}
+#cmd,#cmd_hstry,#score {
+    font-family: courier;
+    font-size: 14px;
+    background: black;
+    color: #21f838;
+
+    overflow: hidden;
+}
+#cmd span,#cmd_hstry div,#score div {
+    float: left;
+    padding-left: 3px;
+    white-space: pre;
+}
+#cursor {
+    float: left;
+    width: 5px;
+    height: 14px;
+    background: #21f838;
+}
+input {
+    width: 0;
+    height: 0;
+    opacity: 0;
+}
+</style>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+<script type="text/javascript" src="baseClass.js"></script>
+<script type="text/javascript">
+
+var terminalHistory=[];
+var index=-1;
+
+var validCommands={
+    'ls':{'short':'list directory contents','long':'List information about the FILEs in the current directory. Sort entries alphabetically.',pattern:/^ls(\s+\-l)?$/ }
+};
+
+function evaluateCommand(command){
+    if(command in validCommands){
+
+    }
+    else{
+        $('#cmd_hstry>div').append('\nbash: '+command+': command not found');
+    }
+}
+
+$(function() {
+    var cursor;
+    window.setInterval(function(){
+        var d = new Date();
+        /// call your function here
+        $('#score>div').append('\n'+('0'+d.getHours()).slice(-2)+":"+('0'+d.getMinutes()).slice(-2)+":"+('0'+d.getSeconds()).slice(-2));
+        $('#score').scrollTop($('#score')[0].scrollHeight);
+    }, 1000);
+    $('#cmd').click(function() {
+        $('input').focus();
+    });
+    $('#cmd_hstry').click(function() {
+        $('input').focus();
+    });
+
+    $('input').keyup(function(e) {
+        /*
+        backspace(8)
+        tab(9)
+        enter(13)
+        left(37)
+        up(38)
+        right(39)
+        down(40)
+        */
+        if (e.which !== 0) {
+            var command=$(this).val();
+            //enter
+            if(e.which == 13){
+                $('#cmd_hstry>div').append('\n'+$('#cmd_user').text()+command);
+                $(this).val('');
+                $('#cmd_input').text('');
+                $('#cmd_hstry').scrollTop($('#cmd_hstry')[0].scrollHeight);
+                terminalHistory.push(command);
+                index = terminalHistory.length;
+                evaluateCommand(command);
+            }
+            //up
+            else if(e.which == 38){
+                index = index-1<0?0:index-1;
+                //console.log('pressed up...'+index+' '+terminalHistory[index]);
+                $('#command').val(terminalHistory[index]);
+            }
+            //down
+            else if(e.which == 40){
+                index = index+1>=terminalHistory.length?terminalHistory.length:index+1;
+                if(index!=terminalHistory.length){
+                    //console.log('pressed down...'+index+' '+terminalHistory[index]);
+                    $('#command').val(terminalHistory[index]);
+                }
+                else{
+                    //console.log('pressed down...');
+                    $('#command').val('');
+                }
+            }
+            console.log("Charcter was typed. It was: " + String.fromCharCode(e.which)+" - "+e.which);
+        }
+        $('#cmd_input').text($(this).val());
+    });
+
+    $('input').blur(function() {
+        clearInterval(cursor);
+        $('#cursor').css({
+            visibility: 'visible'
+        });
+    });
+});
+</script>
+
+<div id="score">
+    <div></div>
+</div>
+
+<div id="divider">
+</div>
+
+<div id="cmd_hstry">
+    <div></div>
+</div>
+
+<div id="cmd">
+    <span id="cmd_user">user-bash$ </span>
+  <span id="cmd_input"></span>
+  <div id="cursor"></div>
+</div>
+
+<input type="text" name="command" id="command" value="" autofocus />
+</html>
